@@ -48,7 +48,7 @@ import {
   X,
   Clock,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useAuth } from "react-oidc-context";
 import { useNavigate, useParams } from "react-router";
 
@@ -67,41 +67,67 @@ const DateTimeSelect: React.FC<DateTimeSelectProperties> = ({
   time,
   setTime,
 }) => {
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dateObj = date ? (date instanceof Date ? date : new Date(date)) : undefined;
+  const isValidDate = dateObj && !isNaN(dateObj.getTime());
+
+  useEffect(() => {
+    if (!calendarOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setCalendarOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [calendarOpen]);
+
   return (
     <div className="space-y-1.5">
       <label className="text-sm font-semibold text-slate-200">{label}</label>
       <div className="flex flex-wrap gap-2 items-center">
         {/* Date picker */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              className="bg-slate-900 border-slate-700 text-slate-200 hover:bg-slate-800 hover:text-white min-w-[160px] justify-start"
-            >
-              <CalendarIcon className="h-4 w-4 mr-2 text-purple-400" />
-              {date ? format(date, "dd MMM yyyy") : <span className="text-slate-500">Pick a date</span>}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 bg-slate-900 border-slate-700" align="start">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={(selectedDate) => {
-                if (!selectedDate) return;
-                const correctedDate = new Date(
-                  Date.UTC(
-                    selectedDate.getFullYear(),
-                    selectedDate.getMonth(),
-                    selectedDate.getDate(),
-                  ),
-                );
-                setDate(correctedDate);
-              }}
-              className="rounded-md text-white"
-            />
-          </PopoverContent>
-        </Popover>
+        <div ref={containerRef} className="relative">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setCalendarOpen((prev) => !prev)}
+            className="bg-slate-900 border-slate-700 text-slate-200 hover:bg-slate-800 hover:text-white min-w-[160px] justify-start"
+          >
+            <CalendarIcon className="h-4 w-4 mr-2 text-purple-400" />
+            {isValidDate ? (
+              format(dateObj, "dd MMM yyyy")
+            ) : (
+              <span className="text-slate-500">Pick a date</span>
+            )}
+          </Button>
+
+          {calendarOpen && (
+            <div className="absolute top-full left-0 z-50 mt-1.5 p-1 bg-slate-900 border border-slate-700 rounded-md shadow-2xl">
+              <Calendar
+                mode="single"
+                selected={isValidDate ? dateObj : undefined}
+                onSelect={(selectedDate) => {
+                  if (!selectedDate) return;
+                  const correctedDate = new Date(
+                    Date.UTC(
+                      selectedDate.getFullYear(),
+                      selectedDate.getMonth(),
+                      selectedDate.getDate(),
+                    ),
+                  );
+                  setDate(correctedDate);
+                  setCalendarOpen(false);
+                }}
+                className="rounded-md text-white"
+              />
+            </div>
+          )}
+        </div>
 
         {/* Time picker */}
         <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-md px-3 py-2">
@@ -215,20 +241,20 @@ const DashboardManageEventPage: React.FC = () => {
           name: event.name,
           description: event.description ?? "",
           imageUrl: event.imageUrl ?? "",
-          startDate: event.start,
+          startDate: event.start ? new Date(event.start) : undefined,
           startTime: event.start
             ? formatTimeFromDate(new Date(event.start))
             : undefined,
-          endDate: event.end,
+          endDate: event.end ? new Date(event.end) : undefined,
           endTime: event.end
             ? formatTimeFromDate(new Date(event.end))
             : undefined,
           venueDetails: event.venue,
-          salesStartDate: event.salesStart,
+          salesStartDate: event.salesStart ? new Date(event.salesStart) : undefined,
           salesStartTime: event.salesStart
             ? formatTimeFromDate(new Date(event.salesStart))
             : undefined,
-          salesEndDate: event.salesEnd,
+          salesEndDate: event.salesEnd ? new Date(event.salesEnd) : undefined,
           salesEndTime: event.salesEnd
             ? formatTimeFromDate(new Date(event.salesEnd))
             : undefined,
@@ -240,8 +266,8 @@ const DashboardManageEventPage: React.FC = () => {
             price: ticket.price,
             totalAvailable: ticket.totalAvailable,
           })),
-          createdAt: event.createdAt,
-          updatedAt: event.updatedAt,
+          createdAt: event.createdAt ? new Date(event.createdAt) : undefined,
+          updatedAt: event.updatedAt ? new Date(event.updatedAt) : undefined,
         });
       };
       fetchEvent();
@@ -292,21 +318,21 @@ const DashboardManageEventPage: React.FC = () => {
       description: eventData.description || undefined,
       imageUrl: eventData.imageUrl || undefined,
       start:
-        eventData.startDate && eventData.startTime
-          ? combineDateTime(eventData.startDate, eventData.startTime)
+        eventData.startDate
+          ? combineDateTime(eventData.startDate, eventData.startTime || "00:00")
           : undefined,
       end:
-        eventData.endDate && eventData.endTime
-          ? combineDateTime(eventData.endDate, eventData.endTime)
+        eventData.endDate
+          ? combineDateTime(eventData.endDate, eventData.endTime || "00:00")
           : undefined,
       venue: eventData.venueDetails,
       salesStart:
-        eventData.salesStartDate && eventData.salesStartTime
-          ? combineDateTime(eventData.salesStartDate, eventData.salesStartTime)
+        eventData.salesStartDate
+          ? combineDateTime(eventData.salesStartDate, eventData.salesStartTime || "00:00")
           : undefined,
       salesEnd:
-        eventData.salesEndDate && eventData.salesEndTime
-          ? combineDateTime(eventData.salesEndDate, eventData.salesEndTime)
+        eventData.salesEndDate
+          ? combineDateTime(eventData.salesEndDate, eventData.salesEndTime || "23:59")
           : undefined,
       status: eventData.status,
       ticketTypes: ticketTypes,
@@ -343,21 +369,21 @@ const DashboardManageEventPage: React.FC = () => {
       description: eventData.description || undefined,
       imageUrl: eventData.imageUrl || undefined,
       start:
-        eventData.startDate && eventData.startTime
-          ? combineDateTime(eventData.startDate, eventData.startTime)
+        eventData.startDate
+          ? combineDateTime(eventData.startDate, eventData.startTime || "00:00")
           : undefined,
       end:
-        eventData.endDate && eventData.endTime
-          ? combineDateTime(eventData.endDate, eventData.endTime)
+        eventData.endDate
+          ? combineDateTime(eventData.endDate, eventData.endTime || "00:00")
           : undefined,
       venue: eventData.venueDetails,
       salesStart:
-        eventData.salesStartDate && eventData.salesStartTime
-          ? combineDateTime(eventData.salesStartDate, eventData.salesStartTime)
+        eventData.salesStartDate
+          ? combineDateTime(eventData.salesStartDate, eventData.salesStartTime || "00:00")
           : undefined,
       salesEnd:
-        eventData.salesEndDate && eventData.salesEndTime
-          ? combineDateTime(eventData.salesEndDate, eventData.salesEndTime)
+        eventData.salesEndDate
+          ? combineDateTime(eventData.salesEndDate, eventData.salesEndTime || "23:59")
           : undefined,
       status: eventData.status,
       ticketTypes: ticketTypes,
