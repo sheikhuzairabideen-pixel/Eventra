@@ -1,6 +1,6 @@
 import { SpringBootPagination } from "@/domain/domain";
 import { Button } from "./ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 interface SimplePaginationProps<T> {
   pagination: SpringBootPagination<T>;
@@ -15,28 +15,28 @@ export function SimplePagination<T>({
   const totalPages = pagination.totalPages;
 
   return (
-    <div className="flex gap-2 items-center">
+    <nav aria-label="Pagination" className="flex items-center gap-5">
       <Button
+        variant="outline"
         size="sm"
-        className="cursor-pointer"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={pagination.first}
       >
-        <ChevronLeft className="h-4 w-4" />
-        <span className="sr-only">Previous Page</span>
+        <ArrowLeft aria-hidden="true" />
+        Previous
       </Button>
-      <div className="text-sm">
+      <p className="text-muted-foreground text-sm tabular-nums" aria-live="polite">
         Page {currentPage + 1} of {totalPages}
-      </div>
+      </p>
       <Button
+        variant="outline"
         size="sm"
-        className="cursor-pointer"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={pagination.last}
       >
-        <ChevronRight className="h-4 w-4" />
-        <span className="sr-only">Next Page</span>
+        Next
+        <ArrowRight aria-hidden="true" />
       </Button>
-    </div>
+    </nav>
   );
 }

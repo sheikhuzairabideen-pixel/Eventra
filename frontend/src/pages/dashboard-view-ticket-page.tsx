@@ -1,15 +1,18 @@
-import NavBar from "@/components/nav-bar";
-import { TicketDetails, TicketStatus } from "@/domain/domain";
+import { useDocumentTitle } from "@/hooks/use-document-title";
+import { TicketDetails } from "@/domain/domain";
 import { getTicket, getTicketQr } from "@/lib/api";
-import { format } from "date-fns";
-import { Calendar, DollarSign, MapPin, Tag, ArrowLeft, Download, ShieldCheck, Ticket } from "lucide-react";
+import { format, isSameDay } from "date-fns";
 import { useEffect, useState } from "react";
 import { useAuth } from "react-oidc-context";
 import { useNavigate, useParams } from "react-router";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import DashboardShell from "@/components/dashboard-shell";
+import StatusTag from "@/components/status-tag";
+import { ErrorState, LoadingState } from "@/components/state-views";
+import { TicketMark } from "@/components/logo";
 
 const DashboardViewTicketPage: React.FC = () => {
+  useDocumentTitle("Your ticket | Eventra");
   const [ticket, setTicket] = useState<TicketDetails | undefined>();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | undefined>();
   const [isQrLoading, setIsQrCodeLoading] = useState(true);
@@ -24,6 +27,9 @@ const DashboardViewTicketPage: React.FC = () => {
       return;
     }
 
+    // Tracked locally so the cleanup below always revokes the URL it created.
+    let objectUrl: string | undefined;
+
     const fetchTicketData = async (accessToken: string, ticketId: string) => {
       try {
         setIsQrCodeLoading(true);
@@ -33,7 +39,8 @@ const DashboardViewTicketPage: React.FC = () => {
         setTicket(ticketData);
 
         const qrBlob = await getTicketQr(accessToken, ticketId);
-        setQrCodeUrl(URL.createObjectURL(qrBlob));
+        objectUrl = URL.createObjectURL(qrBlob);
+        setQrCodeUrl(objectUrl);
       } catch (err) {
         if (err instanceof Error) {
           setError(err.message);
@@ -48,155 +55,130 @@ const DashboardViewTicketPage: React.FC = () => {
     fetchTicketData(user.access_token, id);
 
     return () => {
-      if (qrCodeUrl) {
-        URL.revokeObjectURL(qrCodeUrl);
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
       }
     };
   }, [user?.access_token, isLoading, id]);
 
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex flex-col">
-        <NavBar showBackHome={true} />
-        <div className="container mx-auto px-4 py-16 max-w-xl flex-1 flex flex-col justify-center">
-          <Alert variant="destructive" className="bg-red-950/50 border-red-700 text-white rounded-2xl p-6 shadow-xl">
-            <AlertTitle className="text-lg font-bold">Error Loading Ticket</AlertTitle>
-            <AlertDescription className="mt-2 text-sm text-red-200">{error}</AlertDescription>
-            <div className="mt-6">
-              <Button
-                onClick={() => navigate("/dashboard/tickets")}
-                className="bg-slate-800 hover:bg-slate-700 text-white rounded-xl"
-              >
-                Back to Tickets List
-              </Button>
-            </div>
-          </Alert>
+      <DashboardShell size="narrow">
+        <div className="py-20">
+          <ErrorState
+            title="This ticket didn’t load"
+            message={`${error}. Go back to your tickets and open it again.`}
+            action={
+              <Button onClick={() => navigate("/dashboard/tickets")}>Back to my tickets</Button>
+            }
+          />
         </div>
-      </div>
+      </DashboardShell>
     );
   }
 
+  const start = ticket?.eventStart ? new Date(ticket.eventStart) : undefined;
+  const end = ticket?.eventEnd ? new Date(ticket.eventEnd) : undefined;
+
   return (
-    <div className="bg-slate-950 min-h-screen text-slate-100 flex flex-col selection:bg-purple-500 selection:text-white">
-      <NavBar showBackHome={true} />
+    <DashboardShell size="narrow">
+      <div className="pt-10 pb-6 sm:pt-14">
+        <button
+          type="button"
+          onClick={() => navigate("/dashboard/tickets")}
+          className="text-muted-foreground hover:text-foreground cursor-pointer text-sm transition-colors"
+        >
+          ← My tickets
+        </button>
+      </div>
 
-      <main className="container mx-auto px-4 py-10 flex-1 max-w-2xl">
-        {/* Navigation Breadcrumb */}
-        <div className="mb-6 flex justify-between items-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/dashboard/tickets")}
-            className="text-slate-400 hover:text-white hover:bg-slate-900 cursor-pointer rounded-xl -ml-2 text-xs flex items-center gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to My Tickets</span>
-          </Button>
+      {ticket ? (
+        <div className="ticket mt-4">
+          {/* Identity */}
+          <div className="ticket-top bg-ink text-ink-foreground px-7 pt-8 pb-11 sm:px-10">
+            <p className="text-ink-muted flex items-center gap-2 text-sm">
+              <TicketMark className="text-brand" />
+              Admit one
+            </p>
+            <h1 className="mt-6 text-4xl leading-[1.05] font-light tracking-[-0.02em] sm:text-5xl">
+              {ticket.eventName}
+            </h1>
+            <dl className="text-ink-muted mt-7 space-y-1.5 text-[0.95rem]">
+              <div className="flex gap-3">
+                <dt className="sr-only">Venue</dt>
+                <dd>{ticket.eventVenue}</dd>
+              </div>
+              <div className="flex gap-3">
+                <dt className="sr-only">Date</dt>
+                <dd className="tabular-nums">
+                  {start && end
+                    ? isSameDay(start, end)
+                      ? format(start, "EEEE d MMMM yyyy")
+                      : `${format(start, "d MMM yyyy")} to ${format(end, "d MMM yyyy")}`
+                    : "Date to be announced"}
+                </dd>
+              </div>
+            </dl>
+          </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate("/")}
-            className="text-xs bg-slate-900 border-slate-800 text-slate-300 hover:text-white rounded-xl"
-          >
-            Events Directory
-          </Button>
-        </div>
+          {/* Entry */}
+          <div className="ticket-bottom bg-card px-7 pt-7 pb-9 sm:px-10">
+            <div className="perforation -mt-7 mb-9" aria-hidden="true" />
 
-        {ticket ? (
-          <div className="bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
-            {/* Header / Event Summary Banner */}
-            <div className="p-6 sm:p-8 border-b border-slate-800/80 bg-purple-950/20">
-              <div className="flex justify-between items-start gap-4">
-                <div className="space-y-1">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-purple-400">
-                    Official Digital Pass
-                  </span>
-                  <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                    {ticket.eventName}
-                  </h1>
-                </div>
+            <div className="mx-auto flex size-64 items-center justify-center border-2 border-foreground bg-white p-3">
+              {isQrLoading ? (
                 <span
-                  className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full border ${
-                    ticket.status === TicketStatus.PURCHASED
-                      ? "bg-emerald-950/60 text-emerald-300 border-emerald-500/40"
-                      : "bg-red-950/60 text-red-300 border-red-500/40"
-                  }`}
-                >
-                  {ticket.status}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4 text-xs text-slate-300">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-purple-400 shrink-0" />
-                  <span className="font-medium truncate">{ticket.eventVenue}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-indigo-400 shrink-0" />
-                  <span className="font-medium">
-                    {ticket.eventStart && ticket.eventEnd
-                      ? `${format(new Date(ticket.eventStart), "MMM d, yyyy")} - ${format(
-                          new Date(ticket.eventEnd),
-                          "MMM d, yyyy"
-                        )}`
-                      : "Date to be determined"}
-                  </span>
-                </div>
-              </div>
+                  role="status"
+                  aria-label="Loading QR code"
+                  className="border-foreground/20 border-t-foreground size-7 rounded-full border-2 motion-safe:animate-spin"
+                />
+              ) : qrCodeUrl ? (
+                <img
+                  src={qrCodeUrl}
+                  alt={`QR code for ${ticket.eventName}`}
+                  className="size-full object-contain"
+                />
+              ) : (
+                <p role="alert" className="text-destructive text-center text-sm font-medium">
+                  The QR code couldn’t load. Refresh to try again.
+                </p>
+              )}
             </div>
+            <p className="text-muted-foreground mx-auto mt-5 max-w-xs text-center text-sm">
+              Show this code to staff at the entrance. Turn your screen
+              brightness up if it won’t scan.
+            </p>
 
-            {/* Middle: QR Code Section */}
-            <div className="p-8 text-center bg-slate-950/60 border-b border-dashed border-slate-800 space-y-4">
-              <span className="text-xs uppercase font-bold tracking-wider text-slate-400 block">
-                Scan at Door for Admission
-              </span>
-
-              <div className="w-64 h-64 mx-auto p-4 bg-white rounded-2xl shadow-xl flex items-center justify-center">
-                {isQrLoading ? (
-                  <div className="w-8 h-8 border-4 border-slate-400 border-t-purple-600 rounded-full animate-spin" />
-                ) : qrCodeUrl ? (
-                  <img
-                    src={qrCodeUrl}
-                    alt="Ticket QR Code"
-                    className="w-full h-full object-contain"
-                  />
-                ) : (
-                  <p className="text-xs text-red-500 font-medium">QR code unavailable</p>
-                )}
+            <dl className="border-edge mt-10 grid grid-cols-2 gap-x-6 gap-y-6 border-t pt-7">
+              <div>
+                <dt className="text-muted-foreground text-sm">Ticket</dt>
+                <dd className="mt-1 font-serif text-xl">
+                  {ticket.description || "Admission pass"}
+                </dd>
               </div>
-
-              <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                Present this code on your mobile device to event staff at the entrance.
-              </p>
-            </div>
-
-            {/* Bottom details */}
-            <div className="p-6 sm:p-8 space-y-4">
-              <div className="grid grid-cols-2 gap-4 bg-slate-950/80 border border-slate-800/80 rounded-2xl p-4 text-xs">
-                <div>
-                  <span className="text-slate-400 block font-medium">Tier Name</span>
-                  <span className="text-sm font-bold text-white">{ticket.description || "Admission Pass"}</span>
-                </div>
-                <div className="text-right">
-                  <span className="text-slate-400 block font-medium">Amount Paid</span>
-                  <span className="text-sm font-bold text-purple-400">${ticket.price.toFixed(2)}</span>
-                </div>
+              <div className="text-right">
+                <dt className="text-muted-foreground text-sm">Paid</dt>
+                <dd className="mt-1 font-serif text-xl tabular-nums">
+                  ${ticket.price.toFixed(2)}
+                </dd>
               </div>
-
-              <div className="pt-2 text-center text-[11px] text-slate-500 font-mono">
-                Ticket Identifier: {ticket.id}
+              <div>
+                <dt className="text-muted-foreground text-sm">Status</dt>
+                <dd className="mt-1.5">
+                  <StatusTag status={ticket.status} />
+                </dd>
               </div>
-            </div>
+              <div className="text-right">
+                <dt className="text-muted-foreground text-sm">Ticket ID</dt>
+                <dd className="mt-1.5 text-xs break-all">{ticket.id}</dd>
+              </div>
+            </dl>
           </div>
-        ) : (
-          <div className="text-center py-20">
-            <div className="w-8 h-8 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mx-auto" />
-            <p className="text-xs text-slate-400 mt-3">Loading ticket details...</p>
-          </div>
-        )}
-      </main>
-    </div>
+        </div>
+      ) : (
+        <LoadingState label="Loading your ticket…" />
+      )}
+    </DashboardShell>
   );
 };
 

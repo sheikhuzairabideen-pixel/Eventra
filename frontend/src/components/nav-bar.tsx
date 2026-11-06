@@ -1,4 +1,7 @@
+import { useEffect, useState } from "react";
 import { useAuth } from "react-oidc-context";
+import { Link, NavLink, useLocation, useNavigate } from "react-router";
+import { LogOut, Menu, X } from "lucide-react";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import {
   DropdownMenu,
@@ -9,211 +12,196 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { Button } from "./ui/button";
-import { LogOut, Sparkles, Calendar, Ticket, CheckSquare, Home, ArrowLeft } from "lucide-react";
+import Logo from "./logo";
 import { useRoles } from "@/hooks/use-roles";
-import { Link, useNavigate, useLocation } from "react-router";
+import { cn } from "@/lib/utils";
 
 interface NavBarProps {
+  /** Kept for compatibility with existing pages; the nav now always links home. */
   showBackHome?: boolean;
 }
 
-const NavBar: React.FC<NavBarProps> = ({ showBackHome = true }) => {
+interface NavItem {
+  to: string;
+  label: string;
+  match: (path: string) => boolean;
+}
+
+const linkBase =
+  "relative inline-flex h-16 items-center text-[0.95rem] font-medium text-muted-foreground transition-colors hover:text-foreground after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-transparent aria-[current=page]:text-foreground aria-[current=page]:after:bg-brand";
+
+const NavBar: React.FC<NavBarProps> = () => {
   const { user, isAuthenticated, signinRedirect, signoutRedirect } = useAuth();
   const { isOrganizer, isStaff } = useRoles();
   const navigate = useNavigate();
   const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  const isHome = location.pathname === "/";
+  // Close the mobile menu whenever the route changes.
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
+
+  const items: NavItem[] = [
+    { to: "/", label: "Discover", match: (p) => p === "/" || p.startsWith("/events") },
+  ];
+  if (!isAuthenticated) {
+    items.push({
+      to: "/organizers",
+      label: "For organizers",
+      match: (p) => p.startsWith("/organizers"),
+    });
+  }
+  if (isAuthenticated) {
+    if (isOrganizer) {
+      items.push({
+        to: "/dashboard/events",
+        label: "My events",
+        match: (p) => p.startsWith("/dashboard/events"),
+      });
+    }
+    items.push({
+      to: "/dashboard/tickets",
+      label: "My tickets",
+      match: (p) => p.startsWith("/dashboard/tickets"),
+    });
+    if (isStaff) {
+      items.push({
+        to: "/dashboard/validate-qr",
+        label: "Scan tickets",
+        match: (p) => p.startsWith("/dashboard/validate-qr"),
+      });
+    }
+  }
+
+  const initials =
+    user?.profile?.preferred_username?.slice(0, 2).toUpperCase() || "U";
 
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-md bg-slate-950/85 border-b border-slate-800 text-white shadow-lg transition-all">
-      <div className="container mx-auto px-4 py-3">
-        <div className="flex justify-between items-center gap-4">
-          {/* Logo & Brand */}
-          <div className="flex items-center gap-4 sm:gap-8">
-            <Link
-              to="/"
-              className="flex items-center gap-2.5 group transition-transform active:scale-95"
-            >
-              <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-500 p-0.5 shadow-md shadow-purple-900/30">
-                <div className="h-full w-full bg-slate-950 rounded-[10px] flex items-center justify-center group-hover:bg-transparent transition-colors">
-                  <Sparkles className="h-5 w-5 text-purple-400 group-hover:text-white transition-colors" />
-                </div>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-purple-300 bg-clip-text text-transparent">
-                  Eventra
-                </span>
-                <span className="text-[10px] uppercase font-semibold tracking-wider text-purple-400 -mt-1 hidden sm:block">
-                  Live Experiences
-                </span>
-              </div>
-            </Link>
+    <header className="bg-card border-edge sticky top-0 z-50 border-b-2">
+      <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between gap-6 px-5 sm:px-8">
+        <div className="flex items-center gap-10">
+          <Logo />
+          <nav aria-label="Primary" className="hidden items-center gap-7 md:flex">
+            {items.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                aria-current={item.match(location.pathname) ? "page" : undefined}
+                className={linkBase}
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+        </div>
 
-            {/* Back to Home pill if inside dashboard/events */}
-            {showBackHome && !isHome && (
+        <div className="flex items-center gap-2 sm:gap-3">
+          {isAuthenticated ? (
+            <>
               <Button
+                onClick={() => navigate("/dashboard")}
                 variant="outline"
                 size="sm"
-                onClick={() => navigate("/")}
-                className="hidden md:flex items-center gap-1.5 text-xs text-slate-300 hover:text-white bg-slate-900/80 border-slate-700/80 hover:bg-slate-800 rounded-full cursor-pointer px-3 py-1 shadow-sm transition"
+                className="hidden sm:inline-flex"
               >
-                <ArrowLeft className="h-3.5 w-3.5" />
-                <span>Back to Events</span>
+                Dashboard
               </Button>
-            )}
-
-            {/* Navigation links */}
-            {isAuthenticated && (
-              <nav className="hidden lg:flex items-center gap-1 text-sm font-medium">
-                <Link
-                  to="/"
-                  className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
-                    isHome ? "text-purple-400 bg-purple-950/40" : "text-slate-300 hover:text-white hover:bg-slate-900"
-                  }`}
-                >
-                  <Home className="h-4 w-4" />
-                  <span>Discover</span>
-                </Link>
-
-                {isOrganizer && (
-                  <Link
-                    to="/dashboard/events"
-                    className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
-                      location.pathname.startsWith("/dashboard/events")
-                        ? "text-purple-400 bg-purple-950/40 font-semibold"
-                        : "text-slate-300 hover:text-white hover:bg-slate-900"
-                    }`}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    aria-label="Open account menu"
+                    className="cursor-pointer rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-brand/60"
                   >
-                    <Calendar className="h-4 w-4" />
-                    <span>My Events</span>
-                  </Link>
-                )}
-
-                <Link
-                  to="/dashboard/tickets"
-                  className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
-                    location.pathname.startsWith("/dashboard/tickets")
-                      ? "text-purple-400 bg-purple-950/40 font-semibold"
-                      : "text-slate-300 hover:text-white hover:bg-slate-900"
-                  }`}
-                >
-                  <Ticket className="h-4 w-4" />
-                  <span>My Tickets</span>
-                </Link>
-
-                {isStaff && (
-                  <Link
-                    to="/dashboard/validate-qr"
-                    className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
-                      location.pathname.startsWith("/dashboard/validate-qr")
-                        ? "text-purple-400 bg-purple-950/40 font-semibold"
-                        : "text-slate-300 hover:text-white hover:bg-slate-900"
-                    }`}
-                  >
-                    <CheckSquare className="h-4 w-4" />
-                    <span>Scan Tickets</span>
-                  </Link>
-                )}
-              </nav>
-            )}
-          </div>
-
-          {/* Right Action buttons & Profile */}
-          <div className="flex items-center gap-3">
-            {showBackHome && !isHome && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate("/")}
-                className="md:hidden flex items-center gap-1 text-xs text-slate-300 hover:text-white cursor-pointer px-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span>Home</span>
-              </Button>
-            )}
-
-            {isAuthenticated ? (
-              <>
-                <Button
-                  onClick={() => navigate("/dashboard")}
-                  variant="outline"
-                  size="sm"
-                  className="hidden sm:inline-flex bg-slate-900 hover:bg-slate-800 text-slate-200 border-slate-700 cursor-pointer rounded-lg text-xs font-semibold px-3.5 py-1.5 shadow-sm"
-                >
-                  Dashboard
-                </Button>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2 p-1 rounded-full hover:ring-2 hover:ring-purple-500/50 transition cursor-pointer outline-none">
-                      <Avatar className="h-8 w-8 ring-2 ring-purple-600/60 shadow">
-                        <AvatarFallback className="bg-gradient-to-br from-purple-700 to-indigo-800 text-white font-bold text-xs">
-                          {user?.profile?.preferred_username?.slice(0, 2).toUpperCase() || "U"}
-                        </AvatarFallback>
-                      </Avatar>
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    className="w-56 bg-slate-900 border-slate-700/80 text-white shadow-xl shadow-black/60 rounded-xl p-1.5"
-                    align="end"
-                  >
-                    <DropdownMenuLabel className="font-normal px-2 py-2">
-                      <p className="text-sm font-semibold text-white">
-                        {user?.profile?.name || user?.profile?.preferred_username}
-                      </p>
-                      <p className="text-xs text-slate-400 truncate">{user?.profile?.email}</p>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator className="bg-slate-800" />
-                    <DropdownMenuItem
-                      className="cursor-pointer text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg py-2"
-                      onClick={() => navigate("/dashboard/tickets")}
-                    >
-                      <Ticket className="h-4 w-4 mr-2 text-purple-400" />
-                      <span>My Tickets</span>
+                    <Avatar className="size-9">
+                      <AvatarFallback className="text-xs font-semibold tracking-wide">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-60" align="end">
+                  <DropdownMenuLabel className="font-normal">
+                    <p className="font-serif text-base font-medium">
+                      {user?.profile?.name || user?.profile?.preferred_username}
+                    </p>
+                    <p className="text-muted-foreground truncate text-xs">
+                      {user?.profile?.email}
+                    </p>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate("/dashboard/tickets")}>
+                    My tickets
+                  </DropdownMenuItem>
+                  {isOrganizer && (
+                    <DropdownMenuItem onClick={() => navigate("/dashboard/events")}>
+                      Manage events
                     </DropdownMenuItem>
-                    {isOrganizer && (
-                      <DropdownMenuItem
-                        className="cursor-pointer text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg py-2"
-                        onClick={() => navigate("/dashboard/events")}
-                      >
-                        <Calendar className="h-4 w-4 mr-2 text-indigo-400" />
-                        <span>Manage Events</span>
-                      </DropdownMenuItem>
-                    )}
-                    {isStaff && (
-                      <DropdownMenuItem
-                        className="cursor-pointer text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg py-2"
-                        onClick={() => navigate("/dashboard/validate-qr")}
-                      >
-                        <CheckSquare className="h-4 w-4 mr-2 text-emerald-400" />
-                        <span>Staff Validation</span>
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuSeparator className="bg-slate-800" />
-                    <DropdownMenuItem
-                      className="cursor-pointer text-red-400 hover:text-red-300 hover:bg-red-950/40 rounded-lg py-2"
-                      onClick={() => signoutRedirect()}
-                    >
-                      <LogOut className="h-4 w-4 mr-2" />
-                      <span>Log Out</span>
+                  )}
+                  {isStaff && (
+                    <DropdownMenuItem onClick={() => navigate("/dashboard/validate-qr")}>
+                      Scan tickets
                     </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={() => signinRedirect()}
-                  className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold text-xs px-4 py-2 rounded-lg cursor-pointer shadow-md shadow-purple-900/30 transition-all hover:shadow-purple-900/50"
-                >
-                  Log in / Sign up
-                </Button>
-              </div>
-            )}
-          </div>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem variant="destructive" onClick={() => signoutRedirect()}>
+                    <LogOut className="size-4" />
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          ) : (
+            <Button onClick={() => signinRedirect()} size="sm">
+              Log in or sign up
+            </Button>
+          )}
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-nav"
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            {menuOpen ? <X /> : <Menu />}
+          </Button>
         </div>
       </div>
+
+      {/* Mobile navigation */}
+      <nav
+        id="mobile-nav"
+        aria-label="Primary mobile"
+        hidden={!menuOpen}
+        className={cn("border-edge border-t md:hidden", !menuOpen && "hidden")}
+      >
+        <ul className="mx-auto max-w-[1280px] px-5 py-2 sm:px-8">
+          {items.map((item) => (
+            <li key={item.to} className="border-b last:border-b-0">
+              <Link
+                to={item.to}
+                aria-current={item.match(location.pathname) ? "page" : undefined}
+                className="aria-[current=page]:text-foreground text-muted-foreground flex items-center justify-between py-4 font-serif text-xl aria-[current=page]:font-medium"
+              >
+                {item.label}
+              </Link>
+            </li>
+          ))}
+          {isAuthenticated && (
+            <li className="border-t py-3">
+              <Link
+                to="/dashboard"
+                className="text-muted-foreground flex items-center py-1 text-sm underline underline-offset-4"
+              >
+                Dashboard
+              </Link>
+            </li>
+          )}
+        </ul>
+      </nav>
     </header>
   );
 };

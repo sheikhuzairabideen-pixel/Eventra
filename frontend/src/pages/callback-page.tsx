@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { useAuth } from "react-oidc-context";
 import { useNavigate } from "react-router";
+import PageShell from "@/components/page-shell";
+import { LoadingState } from "@/components/state-views";
 
 const CallbackPage: React.FC = () => {
   const { isLoading, isAuthenticated } = useAuth();
@@ -20,11 +22,11 @@ const CallbackPage: React.FC = () => {
     }
   }, [isLoading, isAuthenticated, navigate]);
 
-  if (isLoading) {
-    return <p>Processing login...</p>;
-  }
-
-  return <p>Completing login...</p>;
+  return (
+    <PageShell width="narrow" footer={false}>
+      <LoadingState label={isLoading ? "Checking your login…" : "Signing you in…"} />
+    </PageShell>
+  );
 };
 
 export default CallbackPage;

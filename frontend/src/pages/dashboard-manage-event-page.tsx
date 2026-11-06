@@ -1,9 +1,7 @@
-import NavBar from "@/components/nav-bar";
+import { useDocumentTitle } from "@/hooks/use-document-title";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -14,11 +12,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -37,20 +30,13 @@ import {
 } from "@/domain/domain";
 import { createEvent, getEvent, updateEvent } from "@/lib/api";
 import { format } from "date-fns";
-import {
-  AlertCircle,
-  CalendarIcon,
-  Edit,
-  Plus,
-  Ticket,
-  Trash,
-  Image as ImageIcon,
-  X,
-  Clock,
-} from "lucide-react";
+import { AlertCircle, CalendarIcon, Pencil, Plus, Trash2, X } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { useAuth } from "react-oidc-context";
 import { useNavigate, useParams } from "react-router";
+import DashboardShell from "@/components/dashboard-shell";
+import { toast } from "@/components/toaster";
+import PageHeader from "@/components/page-header";
 
 interface DateTimeSelectProperties {
   label: string;
@@ -82,32 +68,41 @@ const DateTimeSelect: React.FC<DateTimeSelectProperties> = ({
         setCalendarOpen(false);
       }
     };
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setCalendarOpen(false);
+    };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
   }, [calendarOpen]);
 
   return (
-    <div className="space-y-1.5">
-      <label className="text-sm font-semibold text-slate-200">{label}</label>
-      <div className="flex flex-wrap gap-2 items-center">
+    <fieldset className="space-y-2">
+      <legend className="text-sm font-medium">{label}</legend>
+      <div className="flex flex-wrap items-center gap-2">
         {/* Date picker */}
         <div ref={containerRef} className="relative">
           <Button
             type="button"
             variant="outline"
             onClick={() => setCalendarOpen((prev) => !prev)}
-            className="bg-slate-900 border-slate-700 text-slate-200 hover:bg-slate-800 hover:text-white min-w-[160px] justify-start"
+            aria-expanded={calendarOpen}
+            aria-label={`${label}: choose a date`}
+            className="border-input bg-card hover:bg-accent hover:text-foreground h-11 min-w-[11rem] justify-start font-normal"
           >
-            <CalendarIcon className="h-4 w-4 mr-2 text-purple-400" />
+            <CalendarIcon aria-hidden="true" />
             {isValidDate ? (
-              format(dateObj, "dd MMM yyyy")
+              format(dateObj, "d MMM yyyy")
             ) : (
-              <span className="text-slate-500">Pick a date</span>
+              <span className="text-muted-foreground">Pick a date</span>
             )}
           </Button>
 
           {calendarOpen && (
-            <div className="absolute top-full left-0 z-50 mt-1.5 p-1 bg-slate-900 border border-slate-700 rounded-md shadow-2xl">
+            <div className="bg-popover absolute top-full left-0 z-50 mt-2 border p-1 shadow-[0_18px_30px_-12px_rgb(31_28_23_/_0.25)]">
               <Calendar
                 mode="single"
                 selected={isValidDate ? dateObj : undefined}
@@ -123,37 +118,35 @@ const DateTimeSelect: React.FC<DateTimeSelectProperties> = ({
                   setDate(correctedDate);
                   setCalendarOpen(false);
                 }}
-                className="rounded-md text-white"
               />
             </div>
           )}
         </div>
 
         {/* Time picker */}
-        <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-md px-3 py-2">
-          <Clock className="h-4 w-4 text-purple-400 shrink-0" />
-          <input
-            type="time"
-            className="bg-transparent text-slate-200 text-sm outline-none w-[90px] [&::-webkit-calendar-picker-indicator]:invert"
-            value={time ?? ""}
-            onChange={(e) => setTime(e.target.value)}
-          />
-        </div>
+        <input
+          type="time"
+          aria-label={`${label}: time`}
+          className="border-input bg-card focus-visible:border-ring focus-visible:ring-brand/60 h-11 w-[8.5rem] rounded-md border px-3.5 text-base tabular-nums outline-none focus-visible:ring-[3px] md:text-sm"
+          value={time ?? ""}
+          onChange={(e) => setTime(e.target.value)}
+        />
 
         {/* Clear button */}
         {date && (
           <Button
             type="button"
             variant="ghost"
-            size="sm"
-            className="text-slate-500 hover:text-red-400 hover:bg-red-950/30 px-2"
+            size="icon"
+            aria-label={`Clear ${label.toLowerCase()}`}
+            className="text-muted-foreground"
             onClick={() => setDate(undefined)}
           >
-            <X className="h-4 w-4" />
+            <X aria-hidden="true" />
           </Button>
         )}
       </div>
-    </div>
+    </fieldset>
   );
 };
 
@@ -189,6 +182,7 @@ interface EventData {
 }
 
 const DashboardManageEventPage: React.FC = () => {
+  useDocumentTitle("Edit event | Eventra");
   const { isLoading, user } = useAuth();
   const { id } = useParams();
   const isEditMode = !!id;
@@ -340,6 +334,7 @@ const DashboardManageEventPage: React.FC = () => {
 
     try {
       await updateEvent(accessToken, id, request);
+      toast("Event saved");
       navigate("/dashboard/events");
     } catch (err) {
       if (err instanceof Error) {
@@ -391,6 +386,7 @@ const DashboardManageEventPage: React.FC = () => {
 
     try {
       await createEvent(accessToken, request);
+      toast("Event created");
       navigate("/dashboard/events");
     } catch (err) {
       if (err instanceof Error) {
@@ -475,246 +471,224 @@ const DashboardManageEventPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      <NavBar />
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
-        {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white">
-            {isEditMode ? "Edit Event" : "Create a New Event"}
-          </h1>
-          {isEditMode ? (
+    <DashboardShell>
+      <PageHeader
+        ruled
+        back={{ to: "/dashboard/events", label: "Your events" }}
+        title={isEditMode ? "Edit event" : "Create an event"}
+        description={
+          isEditMode ? (
             <>
-              {eventData.id && (
-                <p className="text-sm text-slate-400 mt-1">ID: {eventData.id}</p>
-              )}
-              {eventData.createdAt && (
-                <p className="text-sm text-slate-400">
-                  Created: {format(eventData.createdAt, "PPP")}
-                </p>
-              )}
-              {eventData.updatedAt && (
-                <p className="text-sm text-slate-400">
-                  Updated: {format(eventData.updatedAt, "PPP")}
-                </p>
-              )}
+              {eventData.createdAt && <>Created {format(eventData.createdAt, "PPP")}. </>}
+              {eventData.updatedAt && <>Last updated {format(eventData.updatedAt, "PPP")}.</>}
             </>
           ) : (
-            <p className="text-slate-400 mt-1">
-              Fill out the form below to create your event
-            </p>
-          )}
-        </div>
+            "Fill in the details below. You can save it as a draft and publish later."
+          )
+        }
+      />
 
-        <form onSubmit={handleFormSubmit} className="space-y-6">
-
-          {/* ── Event Name ── */}
-          <div className="space-y-1.5">
-            <label htmlFor="event-name" className="text-sm font-semibold text-slate-200">
-              Event Name <span className="text-red-400">*</span>
-            </label>
-            <Input
-              id="event-name"
-              className="bg-slate-900 border-slate-700 text-white placeholder:text-slate-500"
-              placeholder="e.g. Tech Summit 2025"
-              value={eventData.name}
-              onChange={(e) => updateField("name", e.target.value)}
-              required
-            />
-            <p className="text-slate-500 text-xs">The public name of your event.</p>
-          </div>
-
-          {/* ── Description ── */}
-          <div className="space-y-1.5">
-            <label htmlFor="description" className="text-sm font-semibold text-slate-200">
-              Description
-            </label>
-            <Textarea
-              id="description"
-              placeholder="Tell attendees what to expect..."
-              className="bg-slate-900 border-slate-700 text-white placeholder:text-slate-500 min-h-[120px]"
-              value={eventData.description}
-              onChange={(e) => updateField("description", e.target.value)}
-            />
-            <p className="text-slate-500 text-xs">Optional. Shown on the public event page.</p>
-          </div>
-
-          {/* ── Image URL ── */}
-          <div className="space-y-1.5">
-            <label htmlFor="imageUrl" className="text-sm font-semibold text-slate-200 flex items-center gap-1.5">
-              <ImageIcon className="h-4 w-4 text-purple-400" />
-              Event Banner Image URL
-            </label>
-            <Input
-              id="imageUrl"
-              placeholder="https://example.com/event-banner.jpg"
-              className="bg-slate-900 border-slate-700 text-white placeholder:text-slate-500"
-              value={eventData.imageUrl}
-              onChange={(e) => updateField("imageUrl", e.target.value)}
-            />
-            {eventData.imageUrl && (
-              <div className="mt-2 rounded-xl overflow-hidden border border-slate-700 h-44 w-full">
-                <img
-                  src={eventData.imageUrl}
-                  alt="Event banner preview"
-                  className="h-full w-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
+      <form onSubmit={handleFormSubmit} className="pb-8">
+          <section className="bg-card border-edge mb-8 grid gap-x-12 gap-y-6 border p-6 shadow-sm sm:p-8 lg:grid-cols-12">
+            <div className="lg:col-span-4">
+              <h2 className="text-2xl font-normal tracking-[-0.01em]">The basics</h2>
+              <p className="text-muted-foreground mt-2 max-w-xs text-[0.95rem] leading-relaxed">
+                What guests see first on the public event page.
+              </p>
+            </div>
+            <div className="space-y-7 lg:col-span-8">
+              <div className="space-y-2">
+                <Label htmlFor="event-name">Event name</Label>
+                <Input
+                  id="event-name"
+                  placeholder="e.g. Tech Summit 2026"
+                  value={eventData.name}
+                  onChange={(e) => updateField("name", e.target.value)}
+                  required
                 />
               </div>
-            )}
-            <p className="text-slate-500 text-xs">Optional. Paste a direct image URL for the banner.</p>
-          </div>
 
-          {/* ── Venue Details ── */}
-          <div className="space-y-1.5">
-            <label htmlFor="venue-details" className="text-sm font-semibold text-slate-200">
-              Venue Details <span className="text-red-400">*</span>
-            </label>
-            <Textarea
-              id="venue-details"
-              className="bg-slate-900 border-slate-700 text-white placeholder:text-slate-500 min-h-[80px]"
-              placeholder="Address, room number, or online link..."
-              value={eventData.venueDetails}
-              onChange={(e) => updateField("venueDetails", e.target.value)}
-            />
-            <p className="text-slate-500 text-xs">
-              Include as much detail as possible (address, floor, parking, etc.)
-            </p>
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Tell guests what to expect"
+                  className="min-h-[140px]"
+                  value={eventData.description}
+                  onChange={(e) => updateField("description", e.target.value)}
+                />
+                <p className="text-muted-foreground text-sm">Optional. Shown on the public event page.</p>
+              </div>
 
-          {/* ── Event Start ── */}
-          <DateTimeSelect
-            label="Event Start"
-            date={eventData.startDate}
-            setDate={(date) => updateField("startDate", date)}
-            time={eventData.startTime}
-            setTime={(time) => updateField("startTime", time)}
-          />
-
-          {/* ── Event End ── */}
-          <DateTimeSelect
-            label="Event End"
-            date={eventData.endDate}
-            setDate={(date) => updateField("endDate", date)}
-            time={eventData.endTime}
-            setTime={(time) => updateField("endTime", time)}
-          />
-
-          {/* ── Ticket Sales Start ── */}
-          <DateTimeSelect
-            label="Ticket Sales Start"
-            date={eventData.salesStartDate}
-            setDate={(date) => updateField("salesStartDate", date)}
-            time={eventData.salesStartTime}
-            setTime={(time) => updateField("salesStartTime", time)}
-          />
-
-          {/* ── Ticket Sales End ── */}
-          <DateTimeSelect
-            label="Ticket Sales End"
-            date={eventData.salesEndDate}
-            setDate={(date) => updateField("salesEndDate", date)}
-            time={eventData.salesEndTime}
-            setTime={(time) => updateField("salesEndTime", time)}
-          />
-
-          {/* ── Ticket Types ── */}
-          <div>
-            <Card className="bg-slate-900 border-slate-700 text-white">
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <CardTitle className="flex gap-2 items-center text-sm font-semibold">
-                      <Ticket className="h-4 w-4 text-purple-400" />
-                      Ticket Types
-                    </CardTitle>
-                    <Button
-                      type="button"
-                      onClick={() => handleAddTicketType()}
-                      className="bg-slate-800 border-slate-700 text-white hover:bg-slate-700 text-xs"
-                    >
-                      <Plus className="h-3.5 w-3.5 mr-1" /> Add Ticket Type
-                    </Button>
+              <div className="space-y-2">
+                <Label htmlFor="imageUrl">Banner image URL</Label>
+                <Input
+                  id="imageUrl"
+                  type="url"
+                  placeholder="https://example.com/event-banner.jpg"
+                  value={eventData.imageUrl}
+                  onChange={(e) => updateField("imageUrl", e.target.value)}
+                />
+                <p className="text-muted-foreground text-sm">
+                  Optional. Paste a direct link to an image.
+                </p>
+                {eventData.imageUrl && (
+                  <div className="bg-secondary mt-3 aspect-[16/7] w-full overflow-hidden border">
+                    <img
+                      src={eventData.imageUrl}
+                      alt="Banner preview"
+                      className="size-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                      }}
+                    />
                   </div>
-                </CardHeader>
+                )}
+              </div>
 
-                <CardContent className="space-y-2">
-                  {eventData.ticketTypes.length === 0 && (
-                    <p className="text-slate-500 text-sm text-center py-4">
-                      No ticket types yet. Click "Add Ticket Type" to get started.
-                    </p>
-                  )}
-                  {eventData.ticketTypes.map((ticketType) => (
-                    <div
-                      key={ticketType.id}
-                      className="bg-slate-800 w-full p-4 rounded-lg border border-slate-700"
-                    >
-                      <div className="flex justify-between items-center">
+              <div className="space-y-2">
+                <Label htmlFor="venue-details">Venue</Label>
+                <Textarea
+                  id="venue-details"
+                  className="min-h-[96px]"
+                  placeholder="Address, room, or online link"
+                  value={eventData.venueDetails}
+                  onChange={(e) => updateField("venueDetails", e.target.value)}
+                  required
+                />
+                <p className="text-muted-foreground text-sm">
+                  Add what guests need to find you: address, floor, parking.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section className="bg-card border-edge mb-8 grid gap-x-12 gap-y-6 border p-6 shadow-sm sm:p-8 lg:grid-cols-12">
+            <div className="lg:col-span-4">
+              <h2 className="text-2xl font-normal tracking-[-0.01em]">Dates</h2>
+              <p className="text-muted-foreground mt-2 max-w-xs text-[0.95rem] leading-relaxed">
+                When the event runs, and when tickets can be bought.
+              </p>
+            </div>
+            <div className="space-y-7 lg:col-span-8">
+              <div className="grid gap-7 sm:grid-cols-2">
+                <DateTimeSelect
+                  label="Event starts"
+                  date={eventData.startDate}
+                  setDate={(date) => updateField("startDate", date)}
+                  time={eventData.startTime}
+                  setTime={(time) => updateField("startTime", time)}
+                />
+                <DateTimeSelect
+                  label="Event ends"
+                  date={eventData.endDate}
+                  setDate={(date) => updateField("endDate", date)}
+                  time={eventData.endTime}
+                  setTime={(time) => updateField("endTime", time)}
+                />
+                <DateTimeSelect
+                  label="Ticket sales open"
+                  date={eventData.salesStartDate}
+                  setDate={(date) => updateField("salesStartDate", date)}
+                  time={eventData.salesStartTime}
+                  setTime={(time) => updateField("salesStartTime", time)}
+                />
+                <DateTimeSelect
+                  label="Ticket sales close"
+                  date={eventData.salesEndDate}
+                  setDate={(date) => updateField("salesEndDate", date)}
+                  time={eventData.salesEndTime}
+                  setTime={(time) => updateField("salesEndTime", time)}
+                />
+              </div>
+            </div>
+          </section>
+
+          <section className="bg-card border-edge mb-8 grid gap-x-12 gap-y-6 border p-6 shadow-sm sm:p-8 lg:grid-cols-12">
+            <div className="lg:col-span-4">
+              <h2 className="text-2xl font-normal tracking-[-0.01em]">Tickets</h2>
+              <p className="text-muted-foreground mt-2 max-w-xs text-[0.95rem] leading-relaxed">
+                Each ticket type has its own price and quantity. You can add as many as you need.
+              </p>
+            </div>
+            <div className="space-y-7 lg:col-span-8">
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                {eventData.ticketTypes.length === 0 ? (
+                  <p className="text-muted-foreground border-y py-8">
+                    No ticket types yet. Add one so guests have something to buy.
+                  </p>
+                ) : (
+                  <ul className="border-t">
+                    {eventData.ticketTypes.map((ticketType) => (
+                      <li
+                        key={ticketType.id}
+                        className="flex items-start justify-between gap-4 border-b py-5"
+                      >
                         <div>
-                          <div className="flex gap-3 items-center">
-                            <p className="text-sm font-medium">{ticketType.name}</p>
-                            <Badge
-                              variant="outline"
-                              className="border-slate-600 text-slate-300 font-normal text-xs"
-                            >
+                          <p className="font-serif text-xl font-medium tracking-tight">
+                            {ticketType.name}
+                            <span className="ml-3 font-light tabular-nums">
                               ${ticketType.price}
-                            </Badge>
-                          </div>
-                          {ticketType.totalAvailable && (
-                            <p className="text-slate-400 text-xs mt-0.5">
-                              {ticketType.totalAvailable} tickets available
+                            </span>
+                          </p>
+                          {ticketType.totalAvailable ? (
+                            <p className="text-muted-foreground mt-0.5 text-sm tabular-nums">
+                              {ticketType.totalAvailable} available
                             </p>
-                          )}
+                          ) : null}
                           {ticketType.description && (
-                            <p className="text-slate-500 text-xs mt-0.5 truncate max-w-xs">
+                            <p className="text-muted-foreground mt-1 max-w-md text-sm">
                               {ticketType.description}
                             </p>
                           )}
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex shrink-0 gap-1">
                           <Button
                             type="button"
                             variant="ghost"
-                            size="sm"
+                            size="icon"
+                            aria-label={`Edit ${ticketType.name}`}
                             onClick={() => handleEditTicketType(ticketType)}
                           >
-                            <Edit className="h-4 w-4" />
+                            <Pencil aria-hidden="true" />
                           </Button>
                           <Button
                             type="button"
                             variant="ghost"
-                            size="sm"
-                            className="text-red-400 hover:text-red-300"
+                            size="icon"
+                            aria-label={`Remove ${ticketType.name}`}
+                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                             onClick={() => handleDeleteTicketType(ticketType.id)}
                           >
-                            <Trash className="h-4 w-4" />
+                            <Trash2 aria-hidden="true" />
                           </Button>
                         </div>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
+                      </li>
+                    ))}
+                  </ul>
+                )}
 
-                {/* Add/Edit Ticket Type Dialog */}
-                <DialogContent className="bg-slate-900 border-slate-700 text-white">
+                <Button type="button" variant="outline" onClick={() => handleAddTicketType()}>
+                  <Plus aria-hidden="true" />
+                  Add ticket type
+                </Button>
+
+                {/* Add/Edit ticket type dialog */}
+                <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>
-                      {currentTicketType?.id ? "Edit Ticket Type" : "Add Ticket Type"}
+                    <DialogTitle className="text-2xl font-normal">
+                      {currentTicketType?.id ? "Edit ticket type" : "Add ticket type"}
                     </DialogTitle>
-                    <DialogDescription className="text-slate-400">
-                      Please enter details of the ticket type
+                    <DialogDescription>
+                      Name it, set a price, and say what’s included.
                     </DialogDescription>
                   </DialogHeader>
 
-                  <div className="space-y-4">
-                    {/* Name */}
-                    <div className="space-y-1">
+                  <div className="space-y-5">
+                    <div className="space-y-2">
                       <Label htmlFor="ticket-type-name">Name</Label>
                       <Input
                         id="ticket-type-name"
-                        className="bg-slate-800 border-slate-700"
                         value={currentTicketType?.name ?? ""}
                         onChange={(e) =>
                           setCurrentTicketType(
@@ -723,13 +697,12 @@ const DashboardManageEventPage: React.FC = () => {
                               : undefined,
                           )
                         }
-                        placeholder="e.g General Admission, VIP, etc."
+                        placeholder="e.g. General admission, VIP"
                       />
                     </div>
 
-                    <div className="flex gap-4">
-                      {/* Price */}
-                      <div className="space-y-1 w-full">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
                         <Label htmlFor="ticket-type-price">Price ($)</Label>
                         <Input
                           id="ticket-type-price"
@@ -747,15 +720,12 @@ const DashboardManageEventPage: React.FC = () => {
                                 : undefined,
                             )
                           }
-                          className="bg-slate-800 border-slate-700"
+                          className="tabular-nums"
                         />
                       </div>
 
-                      {/* Total Available */}
-                      <div className="space-y-1 w-full">
-                        <Label htmlFor="ticket-type-total-available">
-                          Total Available
-                        </Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="ticket-type-total-available">Quantity</Label>
                         <Input
                           id="ticket-type-total-available"
                           type="number"
@@ -773,18 +743,16 @@ const DashboardManageEventPage: React.FC = () => {
                                 : undefined,
                             )
                           }
-                          className="bg-slate-800 border-slate-700"
+                          className="tabular-nums"
                           placeholder="Leave blank for unlimited"
                         />
                       </div>
                     </div>
 
-                    {/* Ticket Description */}
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                       <Label htmlFor="ticket-type-description">Description</Label>
                       <Textarea
                         id="ticket-type-description"
-                        className="bg-slate-800 border-slate-700"
                         value={currentTicketType?.description ?? ""}
                         onChange={(e) =>
                           setCurrentTicketType(
@@ -796,75 +764,72 @@ const DashboardManageEventPage: React.FC = () => {
                               : undefined,
                           )
                         }
-                        placeholder="What's included with this ticket?"
+                        placeholder="What’s included with this ticket?"
                       />
                     </div>
                   </div>
 
                   <DialogFooter>
-                    <Button
-                      className="bg-white text-black hover:bg-slate-200"
-                      onClick={handleSaveTicketType}
-                    >
-                      Save
+                    <Button type="button" onClick={handleSaveTicketType}>
+                      Save ticket type
                     </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-            </Card>
-          </div>
+            </div>
+          </section>
 
-          {/* ── Status ── */}
-          <div className="space-y-1.5">
-            <Label className="text-sm font-semibold text-slate-200">Status</Label>
-            <Select
-              value={eventData.status}
-              onValueChange={(value) => updateField("status", value)}
-            >
-              <SelectTrigger className="w-[180px] bg-slate-900 border-slate-700 text-white">
-                <SelectValue placeholder="Select Event Status" />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-900 border-slate-700 text-white">
-                <SelectItem value={EventStatusEnum.DRAFT}>Draft</SelectItem>
-                <SelectItem value={EventStatusEnum.PUBLISHED}>
-                  Published
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-slate-500 text-xs">
-              Set to "Published" to make the event publicly visible.
-            </p>
-          </div>
+          <section className="bg-card border-edge mb-8 grid gap-x-12 gap-y-6 border p-6 shadow-sm sm:p-8 lg:grid-cols-12">
+            <div className="lg:col-span-4">
+              <h2 className="text-2xl font-normal tracking-[-0.01em]">Publishing</h2>
+              <p className="text-muted-foreground mt-2 max-w-xs text-[0.95rem] leading-relaxed">
+                Drafts are only visible to you. Published events appear on the public site.
+              </p>
+            </div>
+            <div className="space-y-7 lg:col-span-8">
+              <div className="space-y-2">
+                <Label htmlFor="event-status">Status</Label>
+                <Select
+                  value={eventData.status}
+                  onValueChange={(value) => updateField("status", value)}
+                >
+                  <SelectTrigger id="event-status" className="bg-card h-11 w-full sm:w-[220px]">
+                    <SelectValue placeholder="Choose a status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={EventStatusEnum.DRAFT}>Draft</SelectItem>
+                    <SelectItem value={EventStatusEnum.PUBLISHED}>
+                      Published
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </section>
 
-          {/* ── Error ── */}
-          {error && (
-            <Alert variant="destructive" className="bg-red-950/40 border-red-700">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+        {error && (
+          <Alert variant="destructive" className="mb-8">
+            <AlertCircle />
+            <AlertTitle>Couldn’t save the event</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-          {/* ── Submit ── */}
-          <div className="flex gap-3 pt-2">
-            <Button
-              type="submit"
-              className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold px-6"
-            >
-              {isEditMode ? "Update Event" : "Create Event"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white"
-              onClick={() => navigate("/dashboard/events")}
-            >
-              Cancel
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button type="submit" size="lg">
+            {isEditMode ? "Save changes" : "Create event"}
+          </Button>
+          <Button
+            type="button"
+            size="lg"
+            variant="ghost"
+            onClick={() => navigate("/dashboard/events")}
+          >
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </DashboardShell>
   );
 };
 

@@ -1,13 +1,26 @@
+@import url("https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Schibsted+Grotesk:wght@400..700&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  /* Sharp, consistent corners. Nothing in the product is pill-shaped. */
+  --radius-sm: 0px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-xl: 2px;
+
+  /* Natural, warm shadows: depth you can read without any glow. */
+  --shadow-xs: 0 1px 0 rgb(31 28 23 / 0.1);
+  --shadow-sm: 0 1px 0 rgb(31 28 23 / 0.1), 0 2px 6px -2px rgb(31 28 23 / 0.18);
+  --shadow-md: 0 1px 0 rgb(31 28 23 / 0.1), 0 10px 22px -10px rgb(31 28 23 / 0.38);
+  --shadow-lg: 0 1px 0 rgb(31 28 23 / 0.12), 0 24px 40px -16px rgb(31 28 23 / 0.45);
+  --shadow-xl: 0 1px 0 rgb(31 28 23 / 0.12), 0 34px 60px -20px rgb(31 28 23 / 0.5);
+
+  --font-sans: "Schibsted Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: "Newsreader", ui-serif, Georgia, "Times New Roman", serif;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -26,6 +39,15 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-edge: var(--edge);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-ink: var(--brand-ink);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-ink: var(--ink);
+  --color-ink-foreground: var(--ink-foreground);
+  --color-ink-muted: var(--ink-muted);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -42,79 +64,230 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --radius: 0.125rem;
+
+  /* Surfaces, darkest to lightest.
+     sunken: sidebar, table header, alternate bands
+     background: the page
+     card: anything raised off the page (tiles, tables, forms, popovers) */
+  --secondary: #d8ceb6;
+  --background: #e6ddc9;
+  --card: #f3eee1;
+
+  --foreground: #1f1c17;
+  --card-foreground: #1f1c17;
+  --popover: #f3eee1;
+  --popover-foreground: #1f1c17;
+  --primary: #1f1c17;
+  --primary-foreground: #f3eee1;
+  --secondary-foreground: #1f1c17;
+  --muted: #d8ceb6;
+  --muted-foreground: #524a3c;
+  --accent: #d0c5ab;
+  --accent-foreground: #1f1c17;
+
+  /* Edges, three steps:
+     --border  inner dividers (rows, rules)
+     --edge    outlines of containers and controls (3:1 or better)
+     --input   form controls, same as edge */
+  --border: #b3a88d;
+  --edge: #7d7360;
+  --input: #7d7360;
+  --ring: #1f1c17;
+
+  /* Signals */
+  --brand: #d99a1c;
+  --brand-foreground: #1f1c17;
+  --brand-ink: #6b4600;
+  --success: #4b5626;
+  --warning: #764e00;
+  --destructive: #983020;
+
+  /* Inverted surfaces (footer, showcase band, ticket header) */
+  --ink: #1f1c17;
+  --ink-foreground: #f3eee1;
+  --ink-muted: #c2b9a6;
+
+  --chart-1: #4b5626;
+  --chart-2: #d99a1c;
+  --chart-3: #7d7360;
+  --chart-4: #983020;
+  --chart-5: #524a3c;
+  --sidebar: #d8ceb6;
+  --sidebar-foreground: #1f1c17;
+  --sidebar-primary: #1f1c17;
+  --sidebar-primary-foreground: #f3eee1;
+  --sidebar-accent: #f3eee1;
+  --sidebar-accent-foreground: #1f1c17;
+  --sidebar-border: #7d7360;
+  --sidebar-ring: #1f1c17;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #17150f;
+  --foreground: #efe9dc;
+  --card: #1f1c15;
+  --card-foreground: #efe9dc;
+  --popover: #1f1c15;
+  --popover-foreground: #efe9dc;
+  --primary: #efe9dc;
+  --primary-foreground: #17150f;
+  --secondary: #2a261d;
+  --secondary-foreground: #efe9dc;
+  --muted: #2a261d;
+  --muted-foreground: #a89f8d;
+  --accent: #332e23;
+  --accent-foreground: #efe9dc;
+  --border: #3a352a;
+  --edge: #6f6856;
+  --input: #7a735f;
+  --ring: #efe9dc;
+  --brand: #e0a52c;
+  --brand-foreground: #17150f;
+  --brand-ink: #e0a52c;
+  --success: #a3b062;
+  --warning: #e0a52c;
+  --destructive: #e07a63;
+  --ink: #0f0d09;
+  --ink-foreground: #efe9dc;
+  --ink-muted: #a89f8d;
+  --sidebar: #1f1c15;
+  --sidebar-foreground: #efe9dc;
+  --sidebar-primary: #efe9dc;
+  --sidebar-primary-foreground: #17150f;
+  --sidebar-accent: #332e23;
+  --sidebar-accent-foreground: #efe9dc;
+  --sidebar-border: #3a352a;
+  --sidebar-ring: #efe9dc;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 5rem;
+  }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "ss01", "kern";
+    text-rendering: optimizeLegibility;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-serif;
+    font-variant-numeric: lining-nums;
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  ::selection {
+    background: var(--brand);
+    color: var(--brand-foreground);
+  }
+  :focus-visible {
+    outline: 2px solid var(--foreground);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* ---- The ticket: the one memorable object in the product -------------- */
+  /* Two stacked halves, each notched at the join, with the shadow on the
+     wrapper so it follows the notches. */
+  .ticket {
+    filter: drop-shadow(0 1px 0 rgb(31 28 23 / 0.06))
+      drop-shadow(0 18px 22px rgb(31 28 23 / 0.1));
+  }
+  .ticket-top {
+    --notch: 14px;
+    -webkit-mask:
+      radial-gradient(circle var(--notch) at 0 100%, #0000 97%, #000) left / 51% 100% no-repeat,
+      radial-gradient(circle var(--notch) at 100% 100%, #0000 97%, #000) right / 51% 100% no-repeat;
+    mask:
+      radial-gradient(circle var(--notch) at 0 100%, #0000 97%, #000) left / 51% 100% no-repeat,
+      radial-gradient(circle var(--notch) at 100% 100%, #0000 97%, #000) right / 51% 100% no-repeat;
+  }
+  .ticket-bottom {
+    --notch: 14px;
+    -webkit-mask:
+      radial-gradient(circle var(--notch) at 0 0, #0000 97%, #000) left / 51% 100% no-repeat,
+      radial-gradient(circle var(--notch) at 100% 0, #0000 97%, #000) right / 51% 100% no-repeat;
+    mask:
+      radial-gradient(circle var(--notch) at 0 0, #0000 97%, #000) left / 51% 100% no-repeat,
+      radial-gradient(circle var(--notch) at 100% 0, #0000 97%, #000) right / 51% 100% no-repeat;
+  }
+  /* Dashboard frame: the sidebar column reads as its own surface, flush to the
+     viewport edge, with the content column on the page colour. */
+  .dash-frame {
+    background: var(--background);
+  }
+  @media (min-width: 1024px) {
+    .dash-frame {
+      background: linear-gradient(
+        to right,
+        var(--secondary) calc(max(0px, (100% - 1280px) / 2) + 248px),
+        var(--background) 0
+      );
+    }
+  }
+
+  .perforation {
+    background-image: linear-gradient(to right, var(--input) 50%, transparent 0);
+    background-size: 10px 1px;
+    background-repeat: repeat-x;
+    height: 1px;
+    opacity: 0.55;
+  }
+
+  /* ---- Editorial links ---------------------------------------------------- */
+  .link-underline {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.25em;
+    transition: text-decoration-color 150ms ease, text-underline-offset 150ms ease;
+  }
+  .link-underline:hover {
+    text-underline-offset: 0.4em;
+  }
+
+  /* ---- Accordion --------------------------------------------------------- */
+  .disclosure {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 220ms ease;
+  }
+  .disclosure[data-open="true"] {
+    grid-template-rows: 1fr;
+  }
+  .disclosure > div {
+    overflow: hidden;
+  }
+}
+
+/* One orchestrated moment: the hero headline settles in, line by line. */
+@media (prefers-reduced-motion: no-preference) {
+  .settle {
+    animation: settle 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: calc(var(--i, 0) * 110ms);
+  }
+  @keyframes settle {
+    from {
+      opacity: 0;
+      transform: translateY(0.35em);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
 }

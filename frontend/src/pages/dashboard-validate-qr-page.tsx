@@ -1,21 +1,24 @@
-import NavBar from "@/components/nav-bar";
+import { useDocumentTitle } from "@/hooks/use-document-title";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { Scanner } from "@yudiel/react-qr-scanner";
 import {
   TicketValidationMethod,
   TicketValidationStatus,
 } from "@/domain/domain";
-import { AlertCircle, Check, X, QrCode, Keyboard, RotateCcw, ArrowLeft, ShieldCheck } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Check, X } from "lucide-react";
 import { validateTicket } from "@/lib/api";
 import { useAuth } from "react-oidc-context";
-import { useNavigate } from "react-router";
+import DashboardShell from "@/components/dashboard-shell";
+import PageHeader from "@/components/page-header";
+import { ErrorState } from "@/components/state-views";
+import { cn } from "@/lib/utils";
 
 const DashboardValidateQrPage: React.FC = () => {
-  const { isLoading, user } = useAuth();
-  const navigate = useNavigate();
+  useDocumentTitle("Scan tickets | Eventra");
+  const { user } = useAuth();
   const [isManual, setIsManual] = useState(false);
   const [data, setData] = useState<string>("");
   const [error, setError] = useState<string | undefined>();
@@ -59,175 +62,147 @@ const DashboardValidateQrPage: React.FC = () => {
     }
   };
 
+  const isValid = validationStatus === TicketValidationStatus.VALID;
+
+  const modeButton = (active: boolean) =>
+    cn(
+      "flex-1 cursor-pointer border-2 px-4 py-3 text-[0.95rem] font-semibold transition-colors",
+      active
+        ? "bg-primary text-primary-foreground border-primary"
+        : "bg-card border-edge hover:bg-accent",
+    );
+
   return (
-    <div className="bg-slate-950 min-h-screen text-slate-100 flex flex-col selection:bg-purple-500 selection:text-white">
-      <NavBar showBackHome={true} />
+    <DashboardShell size="narrow">
+      <PageHeader
+        ruled
+        title="Check in guests"
+        description="Scan a guest’s QR code, or type the ticket ID if the code won’t scan."
+      />
 
-      <main className="container mx-auto px-4 py-10 flex-1 max-w-xl">
-        <div className="mb-6 flex justify-between items-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/")}
-            className="text-slate-400 hover:text-white hover:bg-slate-900 cursor-pointer rounded-xl -ml-2 text-xs flex items-center gap-2"
+      <div className="flex" role="group" aria-label="Check-in method">
+        <button
+          type="button"
+          aria-pressed={!isManual}
+          onClick={() => {
+            setIsManual(false);
+            handleReset();
+          }}
+          className={modeButton(!isManual)}
+        >
+          Scan with camera
+        </button>
+        <button
+          type="button"
+          aria-pressed={isManual}
+          onClick={() => {
+            setIsManual(true);
+            handleReset();
+          }}
+          className={cn(modeButton(isManual), "-ml-0.5")}
+        >
+          Enter ticket ID
+        </button>
+      </div>
+
+      <div className="mt-10">
+        {error && (
+          <ErrorState
+            className="mb-8"
+            title="Couldn’t check that ticket"
+            message={`${error}. Try scanning again or enter the ticket ID.`}
+          />
+        )}
+
+        {/* Result */}
+        {validationStatus && (
+          <div
+            role={isValid ? "status" : "alert"}
+            className={cn(
+              "px-7 py-10 text-white sm:px-10",
+              isValid ? "bg-success" : "bg-destructive",
+            )}
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Events</span>
-          </Button>
-
-          <div className="inline-flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-3 py-1 rounded-full">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Staff Mode Active</span>
-          </div>
-        </div>
-
-        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
-          <div className="space-y-1">
-            <span className="text-xs uppercase font-bold tracking-wider text-purple-400">
-              Event Door Check-In
-            </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Validate Attendee Pass
-            </h1>
-            <p className="text-xs text-slate-400">
-              Scan attendee ticket QR code or manually verify their pass ID to grant or deny venue entry.
-            </p>
-          </div>
-
-          {/* Mode Switch Tabs */}
-          <div className="grid grid-cols-2 gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
-            <button
-              type="button"
-              onClick={() => {
-                setIsManual(false);
-                handleReset();
-              }}
-              className={`py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition cursor-pointer ${
-                !isManual
-                  ? "bg-purple-600 text-white shadow-md shadow-purple-900/30"
-                  : "text-slate-400 hover:text-white"
-              }`}
-            >
-              <QrCode className="w-4 h-4" />
-              <span>Camera Scanner</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setIsManual(true);
-                handleReset();
-              }}
-              className={`py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition cursor-pointer ${
-                isManual
-                  ? "bg-purple-600 text-white shadow-md shadow-purple-900/30"
-                  : "text-slate-400 hover:text-white"
-              }`}
-            >
-              <Keyboard className="w-4 h-4" />
-              <span>Manual Entry</span>
-            </button>
-          </div>
-
-          {error && (
-            <Alert variant="destructive" className="bg-red-950/50 border-red-700 text-white rounded-2xl">
-              <AlertCircle className="h-5 w-5 text-red-400" />
-              <AlertTitle className="text-sm font-bold">Validation Error</AlertTitle>
-              <AlertDescription className="text-xs text-red-200 mt-1">{error}</AlertDescription>
-            </Alert>
-          )}
-
-          {/* Result Banner */}
-          {validationStatus && (
-            <div
-              className={`p-6 rounded-2xl border text-center space-y-2 animate-in fade-in duration-200 ${
-                validationStatus === TicketValidationStatus.VALID
-                  ? "bg-emerald-950/50 border-emerald-500/50 text-emerald-200"
-                  : "bg-red-950/50 border-red-500/50 text-red-200"
-              }`}
-            >
-              <div
-                className={`w-14 h-14 rounded-full mx-auto flex items-center justify-center ${
-                  validationStatus === TicketValidationStatus.VALID
-                    ? "bg-emerald-500 text-slate-950"
-                    : "bg-red-500 text-white"
-                }`}
-              >
-                {validationStatus === TicketValidationStatus.VALID ? (
-                  <Check className="w-8 h-8 stroke-[3]" />
-                ) : (
-                  <X className="w-8 h-8 stroke-[3]" />
-                )}
-              </div>
-              <h2 className="text-xl font-black">
-                {validationStatus === TicketValidationStatus.VALID
-                  ? "Valid Ticket — Grant Entry"
-                  : "Invalid / Previously Scanned Ticket"}
-              </h2>
-              <p className="text-xs opacity-90 max-w-sm mx-auto">
-                {validationStatus === TicketValidationStatus.VALID
-                  ? "The pass has been successfully recorded and marked as redeemed."
-                  : "This pass is not valid or has already been used for entry."}
-              </p>
-              <div className="pt-2">
-                <Button
-                  onClick={handleReset}
-                  variant="outline"
-                  size="sm"
-                  className="bg-slate-900 border-slate-700 text-white rounded-xl text-xs cursor-pointer hover:bg-slate-800"
-                >
-                  <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
-                  Scan Next Ticket
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Scanner or Manual Form */}
-          {!validationStatus && (
-            <div>
-              {isManual ? (
-                <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">
-                      Ticket UUID / Pass ID
-                    </label>
-                    <Input
-                      placeholder="e.g. 9388deb3-4b51-4835-b739-01999c2831f7"
-                      value={data}
-                      onChange={(e) => setData(e.target.value)}
-                      className="bg-slate-950 border-slate-800 text-white font-mono text-xs rounded-xl"
-                    />
-                  </div>
-                  <Button
-                    onClick={() => handleValidate(data, TicketValidationMethod.MANUAL)}
-                    disabled={isValidating || !data.trim()}
-                    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl py-2.5 text-xs cursor-pointer shadow-lg"
-                  >
-                    {isValidating ? "Validating Pass..." : "Verify Ticket Now"}
-                  </Button>
-                </div>
+            <div className="flex size-14 items-center justify-center bg-white/15">
+              {isValid ? (
+                <Check className="size-8" strokeWidth={2.5} aria-hidden="true" />
               ) : (
-                <div className="space-y-4">
-                  <div className="w-full aspect-square max-w-xs mx-auto rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 relative">
-                    <Scanner
-                      onScan={(results) => {
-                        if (results && results.length > 0 && results[0].rawValue) {
-                          handleValidate(results[0].rawValue, TicketValidationMethod.QR_SCAN);
-                        }
-                      }}
-                      onError={handleError}
-                    />
-                  </div>
-                  <p className="text-center text-xs text-slate-500">
-                    Align QR code inside camera view to validate automatically.
-                  </p>
-                </div>
+                <X className="size-8" strokeWidth={2.5} aria-hidden="true" />
               )}
             </div>
-          )}
-        </div>
-      </main>
-    </div>
+            <h2 className="mt-6 text-5xl leading-none font-light tracking-[-0.02em]">
+              {isValid ? "Let them in" : "Don’t admit"}
+            </h2>
+            <p className="mt-4 max-w-sm text-lg leading-snug text-white/90">
+              {isValid
+                ? "Valid ticket. It’s now marked as used."
+                : "This ticket isn’t valid, or it has already been used."}
+            </p>
+            <Button
+              onClick={handleReset}
+              size="lg"
+              className="mt-8 bg-white text-black hover:bg-white/90"
+            >
+              Check next guest
+            </Button>
+          </div>
+        )}
+
+        {/* Scanner or manual entry */}
+        {!validationStatus &&
+          (isManual ? (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleValidate(data, TicketValidationMethod.MANUAL);
+              }}
+              className="bg-card border-edge space-y-6 border p-6 shadow-sm"
+            >
+              <div className="space-y-2">
+                <Label htmlFor="ticket-id">Ticket ID</Label>
+                <Input
+                  id="ticket-id"
+                  placeholder="9388deb3-4b51-4835-b739-01999c2831f7"
+                  value={data}
+                  onChange={(e) => setData(e.target.value)}
+                  autoComplete="off"
+                  spellCheck={false}
+                  className="text-sm"
+                />
+                <p className="text-muted-foreground text-sm">
+                  You’ll find the ID at the bottom of the guest’s ticket.
+                </p>
+              </div>
+              <Button
+                type="submit"
+                size="lg"
+                disabled={isValidating || !data.trim()}
+                className="w-full"
+              >
+                {isValidating ? "Checking…" : "Check ticket"}
+              </Button>
+            </form>
+          ) : (
+            <div>
+              <div className="bg-secondary border-edge mx-auto aspect-square w-full max-w-sm overflow-hidden border-2 shadow-md">
+                <Scanner
+                  onScan={(results) => {
+                    if (results && results.length > 0 && results[0].rawValue) {
+                      handleValidate(results[0].rawValue, TicketValidationMethod.QR_SCAN);
+                    }
+                  }}
+                  onError={handleError}
+                />
+              </div>
+              <p className="text-muted-foreground mt-5 text-center text-sm" aria-live="polite">
+                {isValidating
+                  ? "Checking ticket…"
+                  : "Hold the guest’s QR code inside the frame. It checks automatically."}
+              </p>
+            </div>
+          ))}
+      </div>
+    </DashboardShell>
   );
 };
 

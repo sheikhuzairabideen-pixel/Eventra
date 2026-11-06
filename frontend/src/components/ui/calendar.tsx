@@ -23,37 +23,37 @@ function Calendar({
         nav: "flex items-center gap-1",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
-          "size-7 bg-transparent p-0 opacity-70 hover:opacity-100 border-slate-600 text-slate-200 hover:bg-slate-800 hover:text-white",
+          "size-8 bg-transparent p-0 opacity-80 hover:opacity-100 hover:bg-accent",
         ),
         nav_button_previous: "absolute left-1",
         nav_button_next: "absolute right-1",
         table: "w-full border-collapse space-x-1",
         head_row: "flex",
         head_cell:
-          "text-slate-400 rounded-md w-8 font-normal text-[0.8rem]",
+          "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
         row: "flex w-full mt-2",
         cell: cn(
-          "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-purple-600/30 [&:has([aria-selected].day-range-end)]:rounded-r-md",
+          "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-brand/25 [&:has([aria-selected].day-range-end)]:rounded-r-md",
           props.mode === "range"
             ? "[&:has(>.day-range-end)]:rounded-r-md [&:has(>.day-range-start)]:rounded-l-md first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md"
             : "[&:has([aria-selected])]:rounded-md",
         ),
         day: cn(
           buttonVariants({ variant: "ghost" }),
-          "size-8 p-0 font-normal aria-selected:opacity-100 hover:bg-slate-700 hover:text-white",
+          "size-9 p-0 font-normal aria-selected:opacity-100 hover:bg-accent",
         ),
         day_range_start:
-          "day-range-start aria-selected:bg-purple-600 aria-selected:text-white",
+          "day-range-start aria-selected:bg-primary aria-selected:text-primary-foreground",
         day_range_end:
-          "day-range-end aria-selected:bg-purple-600 aria-selected:text-white",
+          "day-range-end aria-selected:bg-primary aria-selected:text-primary-foreground",
         day_selected:
-          "bg-purple-600 text-white hover:bg-purple-500 hover:text-white focus:bg-purple-600 focus:text-white",
-        day_today: "bg-slate-700 text-white",
+          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+        day_today: "border border-foreground/60",
         day_outside:
-          "day-outside text-slate-600 aria-selected:text-slate-400",
-        day_disabled: "text-slate-600 opacity-50",
+          "day-outside text-muted-foreground/60 aria-selected:text-muted-foreground",
+        day_disabled: "text-muted-foreground opacity-50",
         day_range_middle:
-          "aria-selected:bg-purple-600/20 aria-selected:text-white",
+          "aria-selected:bg-brand/25 aria-selected:text-foreground",
         day_hidden: "invisible",
         ...classNames,
       }}

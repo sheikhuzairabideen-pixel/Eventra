@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 import { useAuth } from "react-oidc-context";
+import PageShell from "@/components/page-shell";
+import { LoadingState } from "@/components/state-views";
 
 const LoginPage: React.FC = () => {
   const { isLoading, isAuthenticated, signinRedirect } = useAuth();
@@ -13,7 +15,11 @@ const LoginPage: React.FC = () => {
     }
   }, [isLoading, isAuthenticated, signinRedirect]);
 
-  return <div>Redirecting to login...</div>;
+  return (
+    <PageShell width="narrow" footer={false}>
+      <LoadingState label="Taking you to log in…" />
+    </PageShell>
+  );
 };
 
 export default LoginPage;

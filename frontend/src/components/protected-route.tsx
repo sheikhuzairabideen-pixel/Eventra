@@ -1,6 +1,8 @@
 import { ReactNode } from "react";
 import { useAuth } from "react-oidc-context";
 import { Navigate, useLocation } from "react-router";
+import PageShell from "./page-shell";
+import { LoadingState } from "./state-views";
 
 interface ProtectedRouteProperties {
   children: ReactNode;
@@ -11,7 +13,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProperties> = ({ children }) => {
   const location = useLocation();
 
   if (isLoading) {
-    return <p>Loading...</p>;
+    return (
+      <PageShell width="narrow" footer={false}>
+        <LoadingState />
+      </PageShell>
+    );
   }
 
   if (!isAuthenticated) {
