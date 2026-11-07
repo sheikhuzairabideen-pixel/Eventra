@@ -1,5 +1,6 @@
 import {
   CreateEventRequest,
+  CreatePaymentIntentResponse,
   EventDetails,
   EventSummary,
   isErrorResponse,
@@ -338,3 +339,58 @@ export const validateTicket = async (
 
   return responseBody as Promise<TicketValidationResponse>;
 };
+
+export const createPaymentIntent = async (
+  accessToken: string,
+  ticketTypeId: string,
+): Promise<CreatePaymentIntentResponse> => {
+  const response = await fetch("/api/v1/payments/create-intent", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ ticketTypeId }),
+  });
+
+  const responseBody = await response.json();
+
+  if (!response.ok) {
+    if (isErrorResponse(responseBody)) {
+      throw new Error(responseBody.error);
+    } else {
+      console.error(JSON.stringify(responseBody));
+      throw new Error("Failed to create payment session");
+    }
+  }
+
+  return responseBody as CreatePaymentIntentResponse;
+};
+
+export const confirmPayment = async (
+  accessToken: string,
+  paymentIntentId: string,
+): Promise<TicketDetails> => {
+  const response = await fetch("/api/v1/payments/confirm", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ paymentIntentId }),
+  });
+
+  const responseBody = await response.json();
+
+  if (!response.ok) {
+    if (isErrorResponse(responseBody)) {
+      throw new Error(responseBody.error);
+    } else {
+      console.error(JSON.stringify(responseBody));
+      throw new Error("Failed to confirm payment");
+    }
+  }
+
+  return responseBody as TicketDetails;
+};
+

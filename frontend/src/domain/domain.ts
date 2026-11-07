@@ -212,3 +212,16 @@ export interface TicketValidationResponse {
   ticketId: string;
   status: TicketValidationStatus;
 }
+
+export interface CreatePaymentIntentResponse {
+  clientSecret: string;
+  paymentIntentId: string;
+  publishableKey: string;
+  amount: number;
+  currency: string;
+  ticketTypeId: string;
+  ticketTypeName: string;
+  eventId: string;
+  eventName: string;
+}
+

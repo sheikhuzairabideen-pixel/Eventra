@@ -29,6 +29,19 @@ public class TicketTypeServiceImpl implements TicketTypeService {
   @Override
   @Transactional
   public Ticket purchaseTicket(UUID userId, UUID ticketTypeId) {
+    return purchaseTicket(userId, ticketTypeId, null);
+  }
+
+  @Override
+  @Transactional
+  public Ticket purchaseTicket(UUID userId, UUID ticketTypeId, String paymentIntentId) {
+    if (paymentIntentId != null && !paymentIntentId.isBlank()) {
+      java.util.Optional<Ticket> existingTicket = ticketRepository.findByPaymentIntentId(paymentIntentId);
+      if (existingTicket.isPresent()) {
+        return existingTicket.get();
+      }
+    }
+
     User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(
         String.format("User with ID %s was not found", userId)
     ));
@@ -49,6 +62,7 @@ public class TicketTypeServiceImpl implements TicketTypeService {
     ticket.setStatus(TicketStatusEnum.PURCHASED);
     ticket.setTicketType(ticketType);
     ticket.setPurchaser(user);
+    ticket.setPaymentIntentId(paymentIntentId);
 
     Ticket savedTicket = ticketRepository.save(ticket);
     qrCodeService.generateQrCode(savedTicket);

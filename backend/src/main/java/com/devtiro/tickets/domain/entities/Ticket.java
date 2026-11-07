@@ -52,6 +52,9 @@ public class Ticket {
   @JoinColumn(name = "purchaser_id")
   private User purchaser;
 
+  @Column(name = "payment_intent_id")
+  private String paymentIntentId;
+
   @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL)
   private List<TicketValidation> validations = new ArrayList<>();
 

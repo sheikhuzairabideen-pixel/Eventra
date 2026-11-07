@@ -3,6 +3,7 @@ package com.devtiro.tickets.controllers;
 import com.devtiro.tickets.domain.dtos.ErrorDto;
 import com.devtiro.tickets.exceptions.EventNotFoundException;
 import com.devtiro.tickets.exceptions.EventUpdateException;
+import com.devtiro.tickets.exceptions.PaymentException;
 import com.devtiro.tickets.exceptions.QrCodeGenerationException;
 import com.devtiro.tickets.exceptions.QrCodeNotFoundException;
 import com.devtiro.tickets.exceptions.TicketNotFoundException;
@@ -24,6 +25,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Slf4j
 public class GlobalExceptionHandler {
 
+
+  @ExceptionHandler(PaymentException.class)
+  public ResponseEntity<ErrorDto> handlePaymentException(PaymentException ex) {
+    log.error("Caught PaymentException", ex);
+    ErrorDto errorDto = new ErrorDto();
+    errorDto.setError(ex.getMessage());
+    return new ResponseEntity<>(errorDto, HttpStatus.BAD_REQUEST);
+  }
 
   @ExceptionHandler(TicketNotFoundException.class)
   public ResponseEntity<ErrorDto> handleTicketNotFoundException(TicketNotFoundException ex) {

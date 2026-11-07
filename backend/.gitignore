@@ -4,6 +4,13 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+### Environment & Secret files ###
+.env
+.env.*
+!.env.example
+*.local
+
+
 ### STS ###
 .apt_generated
 .classpath

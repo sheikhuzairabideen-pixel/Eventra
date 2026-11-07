@@ -51,7 +51,7 @@ const Accordion: React.FC<{ items: AccordionItem[]; className?: string }> = ({
               id={panelId}
               aria-labelledby={buttonId}
             >
-              <div inert={!isOpen}>
+              <div {...(!isOpen ? { inert: "" } : {})}>
                 <div className="text-muted-foreground max-w-2xl pb-7 leading-relaxed">
                   {item.answer}
                 </div>
