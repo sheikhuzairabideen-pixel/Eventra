@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { EventSummary, EventStatusEnum, SpringBootPagination } from "@/domain/domain";
 import { deleteEvent, listEvents } from "@/lib/api";
-import { AlertCircle, ExternalLink, Pencil, Plus, Trash2 } from "lucide-react";
+import { AlertCircle, ExternalLink, BarChart2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "react-oidc-context";
 import { Link } from "react-router";
@@ -138,6 +138,13 @@ const DashboardListEventsPage: React.FC = () => {
           <Pencil aria-hidden="true" />
           Edit
           <span className="sr-only"> {eventItem.name}</span>
+        </Link>
+      </Button>
+      <Button asChild size="sm" variant="outline">
+        <Link to={`/dashboard/events/${eventItem.id}/analytics`}>
+          <BarChart2 aria-hidden="true" />
+          Analytics
+          <span className="sr-only"> for {eventItem.name}</span>
         </Link>
       </Button>
       {eventItem.status === EventStatusEnum.PUBLISHED && (

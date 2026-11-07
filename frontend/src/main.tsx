@@ -16,6 +16,7 @@ import DashboardListTickets from "./pages/dashboard-list-tickets.tsx";
 import DashboardPage from "./pages/dashboard-page.tsx";
 import DashboardViewTicketPage from "./pages/dashboard-view-ticket-page.tsx";
 import DashboardValidateQrPage from "./pages/dashboard-validate-qr-page.tsx";
+import DashboardEventAnalyticsPage from "./pages/dashboard-event-analytics-page.tsx";
 
 const router = createBrowserRouter([
   {
@@ -99,6 +100,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <DashboardManageEventPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/dashboard/events/:id/analytics",
+    element: (
+      <ProtectedRoute>
+        <DashboardEventAnalyticsPage />
       </ProtectedRoute>
     ),
   },

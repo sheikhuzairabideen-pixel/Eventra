@@ -1,6 +1,7 @@
 import {
   CreateEventRequest,
   CreatePaymentIntentResponse,
+  EventAnalytics,
   EventDetails,
   EventSummary,
   isErrorResponse,
@@ -392,5 +393,30 @@ export const confirmPayment = async (
   }
 
   return responseBody as TicketDetails;
+};
+
+export const getEventAnalytics = async (
+  accessToken: string,
+  eventId: string,
+): Promise<EventAnalytics> => {
+  const response = await fetch(`/api/v1/events/${eventId}/analytics`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  const responseBody = await response.json();
+
+  if (!response.ok) {
+    if (isErrorResponse(responseBody)) {
+      throw new Error(responseBody.error);
+    } else {
+      throw new Error("Failed to load event analytics");
+    }
+  }
+
+  return responseBody as EventAnalytics;
 };
 

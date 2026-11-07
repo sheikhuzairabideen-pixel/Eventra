@@ -225,3 +225,44 @@ export interface CreatePaymentIntentResponse {
   eventName: string;
 }
 
+// --- Event Analytics ---
+
+export interface TicketTypeBreakdown {
+  ticketTypeId: string;
+  name: string;
+  price: number;
+  totalAvailable: number;
+  sold: number;
+  checkedIn: number;
+  revenue: number;
+  fillRate: number;
+}
+
+export interface DailySales {
+  date: string;
+  ticketsSold: number;
+  revenue: number;
+}
+
+export interface HourlyCheckIn {
+  hour: string;
+  checkIns: number;
+}
+
+export interface EventAnalytics {
+  eventId: string;
+  eventName: string;
+  eventVenue: string;
+  eventStatus: string;
+  totalTicketsSold: number;
+  totalCapacity: number;
+  occupancyRate: number;
+  totalRevenue: number;
+  totalCheckedIn: number;
+  checkInRate: number;
+  ticketTypeBreakdown: TicketTypeBreakdown[];
+  dailySales: DailySales[];
+  hourlyCheckIns: HourlyCheckIn[];
+}
+
+
