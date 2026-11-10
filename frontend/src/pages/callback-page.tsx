@@ -18,6 +18,9 @@ const CallbackPage: React.FC = () => {
       if (redirectPath) {
         localStorage.removeItem("redirectPath");
         navigate(redirectPath);
+      } else {
+        // No saved path (e.g. fresh registration or direct login) — go home.
+        navigate("/");
       }
     }
   }, [isLoading, isAuthenticated, navigate]);

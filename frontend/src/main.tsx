@@ -7,6 +7,7 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import OrganizersLandingPage from "./pages/organizers-landing-page.tsx";
 import DashboardManageEventPage from "./pages/dashboard-manage-event-page.tsx";
 import LoginPage from "./pages/login-page.tsx";
+import RegisterPage from "./pages/register-page.tsx";
 import ProtectedRoute from "./components/protected-route.tsx";
 import CallbackPage from "./pages/callback-page.tsx";
 import DashboardListEventsPage from "./pages/dashboard-list-events-page.tsx";
@@ -30,6 +31,10 @@ const router = createBrowserRouter([
   {
     path: "/login",
     Component: LoginPage,
+  },
+  {
+    path: "/register",
+    Component: RegisterPage,
   },
   {
     path: "/events/:id",
@@ -117,9 +122,10 @@ const oidcConfig = {
   authority: "http://localhost:9090/realms/event-ticket-platform",
   client_id: "event-ticket-platform-app",
   redirect_uri: "http://localhost:5173/callback",
-  onSigninCallback: () => {
+  // After the OIDC code exchange completes, clean up the URL params and let
+  // CallbackPage handle navigation (to the saved redirect path or home).
+  onSigninCallback: (): void => {
     window.history.replaceState({}, document.title, window.location.pathname);
-    window.location.href = "/";
   },
 };
 

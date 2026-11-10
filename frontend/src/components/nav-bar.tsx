@@ -152,9 +152,29 @@ const NavBar: React.FC<NavBarProps> = () => {
               </DropdownMenu>
             </>
           ) : (
-            <Button onClick={() => signinRedirect()} size="sm">
-              Log in or sign up
-            </Button>
+            /* Show distinct Login and Create account actions so new users
+               can clearly see both paths. Create account uses Keycloak's
+               built-in registration page via the /register route. */
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => signinRedirect()}
+                variant="outline"
+                size="sm"
+                className="hidden sm:inline-flex"
+              >
+                Log in
+              </Button>
+              <Button
+                onClick={() =>
+                  signinRedirect({
+                    extraQueryParams: { kc_action: "REGISTRATION" },
+                  })
+                }
+                size="sm"
+              >
+                Create account
+              </Button>
+            </div>
           )}
 
           <Button
@@ -190,7 +210,7 @@ const NavBar: React.FC<NavBarProps> = () => {
               </Link>
             </li>
           ))}
-          {isAuthenticated && (
+          {isAuthenticated ? (
             <li className="border-t py-3">
               <Link
                 to="/dashboard"
@@ -198,6 +218,25 @@ const NavBar: React.FC<NavBarProps> = () => {
               >
                 Dashboard
               </Link>
+            </li>
+          ) : (
+            <li className="border-t py-3 flex flex-col gap-2">
+              <button
+                onClick={() => signinRedirect()}
+                className="text-muted-foreground flex items-center py-1 text-sm underline underline-offset-4 cursor-pointer text-left"
+              >
+                Log in
+              </button>
+              <button
+                onClick={() =>
+                  signinRedirect({
+                    extraQueryParams: { kc_action: "REGISTRATION" },
+                  })
+                }
+                className="text-muted-foreground flex items-center py-1 text-sm underline underline-offset-4 cursor-pointer text-left"
+              >
+                Create account
+              </button>
             </li>
           )}
         </ul>
