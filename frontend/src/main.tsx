@@ -119,9 +119,13 @@ const router = createBrowserRouter([
 ]);
 
 const oidcConfig = {
-  authority: "http://localhost:9090/realms/event-ticket-platform",
-  client_id: "event-ticket-platform-app",
-  redirect_uri: "http://localhost:5173/callback",
+  authority:
+    import.meta.env.VITE_KEYCLOAK_AUTHORITY ??
+    "http://localhost:9090/realms/event-ticket-platform",
+  client_id: import.meta.env.VITE_KEYCLOAK_CLIENT_ID ?? "event-ticket-platform-app",
+  // Always redirect back to wherever the app is actually hosted, so the same
+  // build works locally and in production.
+  redirect_uri: `${window.location.origin}/callback`,
   // After the OIDC code exchange completes, clean up the URL params and let
   // CallbackPage handle navigation (to the saved redirect path or home).
   onSigninCallback: (): void => {

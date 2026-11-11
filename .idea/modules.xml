@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/devtiro-event-ticket-app-main.iml" filepath="$PROJECT_DIR$/.idea/devtiro-event-ticket-app-main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/keycloak/keycloak.iml" filepath="$PROJECT_DIR$/keycloak/keycloak.iml" />
     </modules>
   </component>
 </project>

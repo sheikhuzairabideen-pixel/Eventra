@@ -82,12 +82,17 @@ const NavBar: React.FC<NavBarProps> = () => {
       <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between gap-6 px-5 sm:px-8">
         <div className="flex items-center gap-10">
           <Logo />
-          <nav aria-label="Primary" className="hidden items-center gap-7 md:flex">
+          <nav
+            aria-label="Primary"
+            className="hidden items-center gap-7 md:flex"
+          >
             {items.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
-                aria-current={item.match(location.pathname) ? "page" : undefined}
+                aria-current={
+                  item.match(location.pathname) ? "page" : undefined
+                }
                 className={linkBase}
               >
                 {item.label}
@@ -130,21 +135,30 @@ const NavBar: React.FC<NavBarProps> = () => {
                     </p>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate("/dashboard/tickets")}>
+                  <DropdownMenuItem
+                    onClick={() => navigate("/dashboard/tickets")}
+                  >
                     My tickets
                   </DropdownMenuItem>
                   {isOrganizer && (
-                    <DropdownMenuItem onClick={() => navigate("/dashboard/events")}>
+                    <DropdownMenuItem
+                      onClick={() => navigate("/dashboard/events")}
+                    >
                       Manage events
                     </DropdownMenuItem>
                   )}
                   {isStaff && (
-                    <DropdownMenuItem onClick={() => navigate("/dashboard/validate-qr")}>
+                    <DropdownMenuItem
+                      onClick={() => navigate("/dashboard/validate-qr")}
+                    >
                       Scan tickets
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem variant="destructive" onClick={() => signoutRedirect()}>
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onClick={() => signoutRedirect()}
+                  >
                     <LogOut className="size-4" />
                     Log out
                   </DropdownMenuItem>
@@ -165,11 +179,7 @@ const NavBar: React.FC<NavBarProps> = () => {
                 Log in
               </Button>
               <Button
-                onClick={() =>
-                  signinRedirect({
-                    extraQueryParams: { kc_action: "REGISTRATION" },
-                  })
-                }
+                onClick={() => signinRedirect({ prompt: "create" })}
                 size="sm"
               >
                 Create account
@@ -203,7 +213,9 @@ const NavBar: React.FC<NavBarProps> = () => {
             <li key={item.to} className="border-b last:border-b-0">
               <Link
                 to={item.to}
-                aria-current={item.match(location.pathname) ? "page" : undefined}
+                aria-current={
+                  item.match(location.pathname) ? "page" : undefined
+                }
                 className="aria-[current=page]:text-foreground text-muted-foreground flex items-center justify-between py-4 font-serif text-xl aria-[current=page]:font-medium"
               >
                 {item.label}
@@ -228,11 +240,7 @@ const NavBar: React.FC<NavBarProps> = () => {
                 Log in
               </button>
               <button
-                onClick={() =>
-                  signinRedirect({
-                    extraQueryParams: { kc_action: "REGISTRATION" },
-                  })
-                }
+                onClick={() => signinRedirect({ prompt: "create" })}
                 className="text-muted-foreground flex items-center py-1 text-sm underline underline-offset-4 cursor-pointer text-left"
               >
                 Create account

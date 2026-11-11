@@ -25,9 +25,7 @@ const RegisterPage: React.FC = () => {
     if (!isAuthenticated) {
       // kc_action=REGISTRATION tells Keycloak to open its registration page
       // directly instead of the login page.
-      signinRedirect({
-        extraQueryParams: { kc_action: "REGISTRATION" },
-      });
+      signinRedirect({ prompt: "create" });
     }
   }, [isLoading, isAuthenticated, signinRedirect]);
 

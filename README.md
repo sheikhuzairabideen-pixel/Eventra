@@ -73,6 +73,12 @@ guide walks through setting this up.
 > a full test suite, hardened infrastructure config — are out of scope by design rather than by
 > oversight.
 
+## Deploying
+
+The app can be hosted entirely on free tiers that don't require a credit card —
+Vercel (frontend), Render (backend + Keycloak), and Neon (PostgreSQL). See
+[DEPLOY.md](DEPLOY.md) for the step-by-step guide.
+
 ## Licence
 
 This repo is licensed in two parts.

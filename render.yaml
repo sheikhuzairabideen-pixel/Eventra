@@ -1,0 +1,72 @@
+# Render Blueprint — deploys the Spring Boot backend and Keycloak as free web
+# services. See https://render.com/docs/blueprint-spec and DEPLOY.md.
+#
+# PostgreSQL is NOT created here — the app uses a free Neon database you
+# already have (see .env.local). Stripe keys come from your Stripe dashboard.
+#
+# Values marked `sync: false` are prompted for when you apply the blueprint.
+
+services:
+  # ---------- Spring Boot backend ----------
+  - type: web
+    name: event-ticket-backend
+    runtime: docker
+    dockerfilePath: ./backend/dockerfile
+    dockerContext: ./backend
+    plan: free
+    envVars:
+      # Pooled Neon connection string, e.g.
+      # jdbc:postgresql://ep-xxx-pooler.c-x.aws.neon.tech/neondb?sslmode=require
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      # https://<keycloak-service-url>/realms/event-ticket-platform
+      - key: KEYCLOAK_ISSUER_URI
+        sync: false
+      # Frontend origin, e.g. https://your-app.vercel.app
+      - key: APP_CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+
+  # ---------- Keycloak ----------
+  - type: web
+    name: event-ticket-keycloak
+    runtime: image
+    image:
+      url: quay.io/keycloak/keycloak:26.3
+    plan: free
+    dockerCommand: start
+    envVars:
+      - key: KC_DB
+        value: postgres
+      # UNPOOLED Neon connection string pointing at a dedicated `keycloak`
+      # database on your Neon branch, e.g.
+      # jdbc:postgresql://ep-xxx.c-x.aws.neon.tech/keycloak?sslmode=require
+      - key: KC_DB_URL
+        sync: false
+      - key: KC_DB_USERNAME
+        sync: false
+      - key: KC_DB_PASSWORD
+        sync: false
+      # Set after the first deploy, once Render assigns the service URL,
+      # e.g. https://event-ticket-keycloak.onrender.com
+      - key: KC_HOSTNAME
+        sync: false
+      # Render terminates TLS in front of the container.
+      - key: KC_HTTP_ENABLED
+        value: "true"
+      - key: KC_PROXY_HEADERS
+        value: xforwarded
+      - key: KC_BOOTSTRAP_ADMIN_USERNAME
+        value: admin
+      - key: KC_BOOTSTRAP_ADMIN_PASSWORD
+        sync: false
+      # Keep Keycloak within the 512 MB of the free plan.
+      - key: JAVA_OPTS_APPEND
+        value: -XX:MaxRAMPercentage=55 -XX:+ExitOnOutOfMemoryError
